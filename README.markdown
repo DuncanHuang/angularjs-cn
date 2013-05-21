@@ -1,6 +1,6 @@
 #AngularJS
 
-![AngularJS](angularjs-book.jpg)
+![AngularJS](figure/angularjs-book.jpg)
 
 "AngularJS"中译本 -《AngularJS》
 
