@@ -5,6 +5,7 @@
 "AngularJS"中译本 -《AngularJS》
 
 + 作者: [Brad Green](https://github.com/bradlygreen)  [Shyam Seshadri](https://github.com/shyamseshadri)
++ 译者: [basecss](mailto:270842722@qq.com)
 
 **更少的代码, 更多的乐趣, 增强结构化Web应用程序的生产力**
 
@@ -166,3 +167,5 @@
 *************
 
 ##索引
+
+> 译者按: 粗译, 如有理解错误还烦请大家纠正. 可以提交pull request, 也可以在issues中提出修正意见, 同时也可以给我发[邮件](mailto:270842722@qq.com)提出修正意见. 
