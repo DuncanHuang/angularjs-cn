@@ -357,3 +357,148 @@
 对于这个问题在编写单元测试时. 如果你需要DOM, 你在测试中创建它, 只会增加测试程序的复杂度. 当你的页面发生变化时, 你需要在你的测试中改变DOM, 这样只会带来更多的维护工作. 最后, 访问DOM是很慢的, 测试缓慢意味着反馈不会及时以及最终解析都是缓慢的. Angular的控制器测试并没有这些问题. 
 
 因此你可以很轻松的声明事件处理程序的简单性和可读性, 毫无罪恶感的违反最佳实践.
+
+###列表, 表格和其他重复的元素
+
+最有用可能就是Angular指令, `ng-repeat`对于集合中的每一项都创建一次一组元素的一份副本. 你应该在你想创建列表问题的任何地方使用它.
+
+比如说我们给老师编写一个学生花名册的应用程序. 我们可能从服务器获得学生的数据, 但是在这个例子中, 我们只在JavaScript将它定义为一个模型:
+
+    var students = [{name: 'Mary Contrary', id:'1'},
+                    {name: 'Jack Sprat', id: '2'},
+                    {name: 'Jill Hill', id: '3'}];
+                    
+    function StudentListController($scope){
+        $scope.students = students;
+    }
+
+我们可以像下面这样来显示学生列表:
+
+    <ul ng-controller="">
+        <li ng-repeat="student in students">
+            <a href="/student/view/{{student.id}}">{{student.name}}</a>
+        </li>
+    </ul>
+    
+`ng-repeat`将会制作标签内所有HTML的副本, 包括标签内的东西. 这样, 我们将看到:
+
++ Mary Contrary
++ Jack Sprat
++ Jill Hill
+
+分别链接到*/student/view/1, /student/view/2, /student/view/3*.
+
+正如我们之前所见, 改变学生数组将会自动改变渲染列表. 如果我们做一些例如插入一个新的学生到列表的事情:
+
+    var students = [{name: 'Mary Contrary', id:'1'},
+                    {name: 'Jack Sprat', id: '2'},
+                    {name: 'Jill Hill', id: '3'}];
+                    
+    function StudentListController($scope){
+        $scope.students = students;
+        
+        $scope.insertTom = function(){
+            $scope.students.splice(1, 0, {name: 'Tom Thumb', id: '4'});
+        };
+    }
+    
+然后在模板中添加一个按钮来调用:
+
+    <ul ng-controller="">
+        <li ng-repeat="student in students">
+            <a href="/student/view/{{student.id}}">{{student.name}}</a>
+        </li>
+    </ul>
+    <button ng-click="insertTom()">Insert</button>
+    
+现在我们可以看到:
+
++ Mary Contrary
++ Tom Thumb
++ Jack Sprat
++ Jill Hill
+
+`ng-repeat`指令还通过`$index`给你提供了当前元素的索引, 如果是集合中第一个元素, 中间的某个元素, 或者是最后一个元素使用`$first`, `$middle`和`$last`会给你提供一个布尔值.
+
+你可以想象使用`$index`来标记表格中的行. 给定一个这样的模板:
+
+    <table ng-controller="AlbumController">
+        <tr ng-repeat="track in album">
+            <td>{{$index + 1}}</td>
+            <td>{{track.name}}</td>
+            <td>{{track.duration}}</td>
+        </tr>
+    </table>
+    
+这是控制器:
+
+    var album = [{name: 'Southwest Serenade', duration: '2:34'},
+                 {name: 'Northern Light Waltz', duration: '3:21'},
+                 {name: 'Eastern Tango', duration: '17:45'}];
+                 
+    function AlbumController($scope){
+        $scope.album = album;
+    };
+    
+我们得到如下结果:
+
+1. Southwest Serenade     2:34
+2. Northern Light Waltz   3:21
+3. Eastern Tango         17:45
+
+###隐藏与显示
+
+对于菜单, 上下文敏感的工具[*原文:context-sensitive tools*]以及其他许多情况, 显示和隐藏元素是一个关键的特性. 正如在Angular中, 我们基于模型的变化触发UI的改变, 以及通过指令将改变反映到UI中. 
+
+这里, `ng-show`和`ng-hide`用于处理这些工作. 它们基于传递给它们的表达式提供显示和隐藏的功能. 即, 当你传递的表达式为true时`ng-show`将显示元素, 当为false时则隐藏元素. 当表达式为true时`ng-hide`隐藏元素, 为false时显示元素. 这取决于你使用哪个更能表达的你意图.
+
+这些指令通过适当的设置元素的样式为`display: block`来显示元素, 设置样式为`display: none`来隐藏元素. 让我们看以个正在构建的Death Ray控制板的虚拟的例子:
+
+    <div ng-controller="DeathrayMenuController">
+        <p><button ng-click="toggleMenu()">Toggle Menu</button></p>
+        <ul ng-show="menuState.show">
+            <li ng-click="stun()">Stun</li>
+            <li ng-click="disintegrate()">Disintegrate</li>
+            <li ng-click="erase()">Erase from history</li>
+        </ul>
+    </div>
+    
+    function DeathrayMenuController($scope){
+        $scope.menuState.show = false;
+        
+        $scope.toggleMenu = function(){
+            $scope.menuState.show = !$scope.menuState.show;
+        };
+        
+        // death ray functions left as exercise to reader
+    };
+    
+###CSS类和样式
+
+显而易见, 现在你可以在你的应用程序中通过使用{{ }}插值符号绑定数据的方式动态的设置类和样式. 甚至你可以在你的应用程序中组成匹配的类名. 例如, 你想根据条件禁用一些菜单, 你可以像下面这样从视觉上显示给用户.
+
+有如下CSS:
+
+    .menu-disabled-true {
+        color: gray;
+    }
+    
+你可以使用下面的模板在你的DeathRay指示`stun`函数来禁用某些元素:
+
+    <div ng-controller="DeatrayMenuController">
+        <ul>
+            <li class="menu-disabled-{{isDisabled}}" ng-click="stun()">Stun</li>
+            ...
+        </ul>
+    </div>
+    
+你可以通过控制器适当的设置`isDisabled`属性的值:
+
+    function DeathrayMenuController($scope){
+        $scope.isDisabled = false;
+        
+        $scope.stun = function(){
+            //stun the target, then disable menu to allow regeneration
+            $scope.isDisabled = 'true';
+        };
+    }
