@@ -502,3 +502,175 @@
             $scope.isDisabled = 'true';
         };
     }
+    
+`stun`菜单项的class将设置为`menu-disabled-`加`$scope.isDisabled`的值. 因为它初始化为false, 默认情况下结果为`menu-disabled-false`. 而此时这里没有与CSS规则匹配的元素, 则没有效果. 当`$scope.isDisabled`设置为true时, CSS规则将变成`menu-disabled-true`, 此时则调用规则使文本为灰色.
+
+这种技术也同样适用于嵌入内联样式, 例如`style="{{some expression}}"`.
+
+虽然想法很好, 但是这里有一个缺点就是它使用了一个水平分割线来组合你的类名. 虽然在这个例子中很容易理解, 但是它可能很快就会变得难以管理, 你必须不断的阅读你的模板和JavaScript来正确的创建你的CSS规则.
+
+因此, Angular提供了`ng-class`和`ng-style`指令. 它们都接受一个表达式. 这个表达式的计算结果可以是下列之一:
+
++ 一个使用空格分割类名的字符串
++ 一个类名数组
++ 类名到布尔值的映射
+
+让我们想象一下, 你希望在应用程序头部的一个标准位置显示错误和警告给用户. 使用`ng-class`指令, 你可以这样做:
+
+    .error {
+        background-color: red;
+    }
+    .warning {
+        background-color: yellow;
+    }
+    
+    <div ng-controller="HeaderController">
+        ...
+        <div ng-class="{error: isError, warning: isWarning}">{{messageText}}</div>
+        ...
+        <button ng-click="showError()">Simulate Error</button>
+        <button ng-click="showWarning()">Simulate Warning</button>
+    </div>
+    
+    function HeaderController($scope){
+        $scope.isError = false;
+        $scope.isWarning = false;
+        
+        $scope.showError = function(){
+            $scope.messageText = 'This is an error';
+            $scope.isError = true;
+            $scope.isWarning = false;
+        };
+        
+        $scope.showWarning = function(){
+            $scope.messageText = 'Just a warning. Please carry on';
+            $scope.isWarning = true;
+            $scope.isError = false;
+        };
+    }
+
+你甚至可以做出更漂亮的事情, 例如高亮表格中选中的行. 比方说, 我们要构建一个餐厅目录并且希望高亮用户点击的那行.
+
+在CSS中, 我们设置一个高亮行的样式:
+
+    .selected {
+        background-color: lightgreen;
+    }
+
+在模版中, 我们设置`ng-class`为`{selected: $index==selectedRow}`. 当模型中的`selectedRow`属性匹配ng-repeat的`$index`时设置class为selected. 我们还设置一个`ng-click`来通知控制器用户点击了哪一行:
+
+    <table ng-controller="RestaurantTableController">
+        <tr ng-repeat="restaurant in directory" ng-click="selectRestaurant($index)" ng-class="{selected: $index==selectedRow">
+            <td>{{restaurant.name}}</td>
+            <td>{{restaurant.cuisine}}</td>
+        </tr>
+    </table>
+
+在我们的JavaScript中, 我们只设置虚拟的餐厅和创建`selectRow`函数:
+
+    function RestuarantTableController($scope){
+        $scope.directory = [{name: 'The Handsome Heifer', cuisine: 'BBQ'},
+                            {name: 'Green\'s Green Greens', cuisine: 'Salads'},
+                            {name: 'House of Fine Fish', cuisine: 'Seafood'}];
+        $scope.selectRestaurant = function(row){
+            $scope.selectedRow = row;
+        };
+    }
+    
+###`src`和`href`属性注意事项
+
+当数据绑定给一个`<img>`或者`<a>`标签时, 像上面一样在`src`或者`href`属性中使用{{ }}处理路径将无法正常工作. 因为在浏览器中图片与其他内容是并行加载的, 所以Angular无法拦截数据绑定的请求.
+
+对于`<img>`而言最明显的语法便是:
+
+    <img src="/images/cats/{{favoriteCat}}">
+    
+相反, 你应该使用`ng-src`属性并像下面这样编写你的模板:
+
+    <img ng-src="/images/cats/{{favoriteCat}}">
+
+同样的道理, 对于`<a>`标签你应该使用`ng-href`:
+
+    <a ng-href="/shop/category={{numberOfBalloons}}">some text</a>
+    
+###表达式
+
+表达式背后的思想是让你巧妙的在你的模板, 应用程序逻辑以及数据之间创建钩子而与此同时防止应用程序逻辑偷偷摸摸的进入模版中.
+
+直到现在, 我们一直主要是引用原生的数据作为表达式传递给Angular指令. 但是其实这些表达式可以做更多的事情. 你可以处理简单的数学运算(+, -, /, *, %), 进行比较(==, !=, >, <, >=, <=), 执行布尔逻辑运算(&&, !!, !)以及按位运算(\^, &, |). 你可以调用暴露在控制器的`$scope`对象上的函数, 你还可以引用数据和对象表示法([], {}, …).
+
+下面都是有效表达式的例子:
+
+    <div ng-controller="SomeController">
+        <div>{{recompute() / 10}}<div>
+        <ul ng-repeat="thing in things">
+            <li ng-class="{highlight: $index % 4 >= threshold($index)}">
+                {{otherFunction($index)}}
+            </li>
+        </ul>
+    </div>
+
+这里的第一个表达式`recompute() / 10`是有效的, 是在模板中设置逻辑很好的好例子, 但是应该避免这种方式. 保持视图和控制器之间的职责分离可以确保它们容易理解和测试.
+
+虽然你可以使用表达式做很多事情, 它们由Angular自定义的解释器部分计算. 他们并不使用JavaScript的`eval()`执行, eval()有相当多的限制.
+
+相反, 它们使用Angular自带的自定义解释器执行. 在里面, 你不会看到循环结构(for, while等等), 流程控制语句(if-else, throw)或者改变数据的运算符(++, --). 当你需要使用这些类型的运算时, 你应该在你的控制器中使用指令进行处理.
+
+尽管表达式在很多方面比JavaScript更加严格, 但它们对`undefined`和`null`并不是很严格(更宽松). 模板只是简单的渲染一些东西, 并不会抛出一个`NullPointerException`的错误. 这样就允许你安全的使用模型而没有限制, 并且只要它们得到数据填充就让它们出现在用户界面中.
+
+###分离用户界面(UI)和控制器职责
+
+在你的应用程序中控制器有三个职责:
+
++ 在你的应用程序的模型中设置初试状态.[初始化应用程序]
++ 通过`$scope`暴露模型和函数到视图中.
++ 监控模型的改变并触发行为.
+
+对于第一点第二点在本章的已经看过更多例子. 稍候我们会讨论最后一点. 然而, 控制器其概念上的目的, 是提供代码或者执行用户与视图交互愿望的逻辑. 
+
+为了保持控制器的小巧和易于管理, 我们建议你针对视图的每一个区域创建一个控制器. 也就是说, 如果你有一个菜单则创建一个`MenuController`. 如果你有一个面包屑导航, 则编写一个`BreadcrumbController`, 等等.
+
+你可能开始懂了, 但是需要明确的将控制器绑定到一个指定的DOM块中用于管理它们. 有两种主要的方式关联控制器与DOM节点, 一种方式是在模板中指定一个`ng-controller`属性, 另一种方式是通过`route`(路由)关联一个动态加载的DOM模板片段, 也称作视图.
+
+我们将在本章的后面再讨论关于视图和路由的信息.
+
+如果你的UI中有一个复杂的片段, 你可以通过创建嵌套的控制器, 通过继承树来共享模型和函数来保持你的代码间接性和可维护性. 嵌套控制器很简单, 你可以简单的在另一个DOM中分配一个控制器到一个DOM元素中做到这一点, 就像这样:
+
+    <div ng-controller="ParentController">
+        <div ng-controller="ChildController">…</div>
+    </div>
+
+虽然我们将这个表达为控制器嵌套, 实际的嵌套发生在作用域中($scope对象中). 传递给嵌套控制器的`$scope`继承自父控制器的`$scope`原型, 这意味着传递给`ChildController`的`$scope`将有权访问传递给`ParentController`的`$scope`的所有属性.
+
+###使用作用域发布模型数据
+
+将`$scope`对象传递给我们的控制器便是我们将模型数据暴露给视图的机制. 可能你的应用程序中还有其他的数据, 但Angular中只能够通过scope访问它可以访问的模型部分的属性. 你可以认为scope就是作为一个上下文环境用于在你的模型中观察变化的.
+
+我们已经看过了很多明确设置作用域的例子, 就像`$scope.count = 5`. 也有一些间接的方法在模板内设置其自身的模型. 你可以像下面这样做:
+
+1. 通过表达式. 由于表达式运行在控制器的作用域关联的元素的上下文中, 在表达式中设置属性与在控制器的作用域中设置一个属性一样. 
+
+也就是像这样:  
+   
+    <button ng-click="count=3">Set count to three</button>
+    
+这样做也有相同的效果:
+
+    <div ng-controller="CountController">
+        <button ng-click="setCount()">Set count to three</button>
+    </div>
+    
+CountController定义如下:
+
+    function CountController($scope){
+        $scope.setCount = function(){
+            $scope.count = 3;
+        }
+    }
+    
+2. 在表单的输入框中使用`ng-model`. 在表达式中, 模型被指定为`ng-model`的参数也适用于控制器作用域范围. 此外, 这将在表单字段和你执行的模型之间创建一个双向数据绑定.
+
+###使用$watch监控模型改变
+
+
+
