@@ -668,9 +668,191 @@ CountController定义如下:
         }
     }
     
-2. 在表单的输入框中使用`ng-model`. 在表达式中, 模型被指定为`ng-model`的参数也适用于控制器作用域范围. 此外, 这将在表单字段和你执行的模型之间创建一个双向数据绑定.
+2. 在表单的输入框中使用`ng-model`. 在表达式中, 模型被指定为`ng-model`的参数也适用于控制器作用域范围. 此外, 这将在表单字段和你指定的模型之间创建一个双向数据绑定.
 
-###使用$watch监控模型改变
+###使用$watch监控模型变化
+
+所有scope函数中最常用的可能就是$watch了, 当你的模型部分发生变化时它会通知你. 你可以监控单个对象属性, 也可以监控计算结果(函数), 几乎所有的事物都可当作一个属性或者一个JavaScript运算能够被访问. 该函数的签名如下:
+
+    $watch(watchFn, watchAction, deepWatch);
+    
+每个参数的详细信息如下:
+
+**watchFn**
+
+> 这个参数是一个Angular字符串表达式或者是一个返回你所希望监控的模型当前值的函数. 这个表达式会被多次执行, 因此你需要确保它不会有副作用. 也就是说, 它可以被调用多次而不改变状态. 同样的原因, 监控表达式也应该是运算复杂度低的(执行简单的运算). 如果你传递一个字符串的表达式, 它将会对其调用的(执行的表达式)作用域中的有效对象求值.
+
+**watchAction**
+
+> 这是`watchFn`繁盛变化时会被调用的函数或者表达式. 在函数形式中, 它接受`watchFn`的新值, 旧值以及作用域的引用. 其签名就是`function(newValue, oldValue, scope)`.
+
+**deepWatch**
+
+> 如果设置为true, 这个可选的布尔参数用于告诉Angular检查所监控的对象中每一个属性的变化. 如果你希望监控数组的个别元素或者对象的属性而不是一个普通的值, 那么你应该使用它. 由于Angular需要遍历数组或者对象, 如果集合(数组元素/对象成员)很大, 那么计算的代价会非常高.
+
+当你不再想收到变化通知时, `$watch`函数将返回一个注销监听器的函数.
+
+如果我们像监控一个属性, 然后在稍后注销它, 我们将使用下面的方式:
+
+    ...
+    var dereg = $scope.$watch('someModel.someProperty', callbackOnChange);
+    ...
+    dereg();
+    
+让我们回顾一下第一章中完整的购物车示例. 比方说, 当用户在他的购物车中添加了超出100美元的商品时, 我们希望申请10美元的优惠. 我们使用下面的模板:
+
+    <div ng-controller="CartController">
+        <div ng-repeat="item in items">
+            <span>{{item.title}}</span>
+            <input ng-model="item.quantity">
+            <span>{{item.price | currency}}</span>
+            <span>{{item.price * item.quantity | currency}}</span>
+        </div>
+        <div>Total: {{totalCart() | currency}}</div>
+        <div>Discount: {{bill.discount | currency}}</div>
+        <div>Subtotal: {{subtotal() | currency}}</div>
+    </div>
+    
+紧接着是`CartController`, 它看起来像下面这样:
+
+    function CartController($scope){
+        $scope.bill = {};
+
+        $scope.items = [
+            {title: 'Paint pots', quantity: 8, price: 3.95},
+            {title: 'Polka dots', quantity: 17, price: 12.95},
+            {title: 'Pebbles', quantity: 5, price: 6.95}
+        ];
+
+        $scope.totalCart = function(){
+            var total = 0;
+            for (var i = 0, len = $scope.items.length; i < len; i++){
+                total = total + $scope.items[i].price* $scope.items[i].quantity;
+            }
+
+            return total;
+        };
+
+        $scope.subtotal = function(){
+            return $scope.totalCart() - $scope.discount;
+        };
+
+        function calculateDiscount(newValue, oldValue, scope){
+            $scope.bill.discount = newValue > 100 ? 10 : 0;
+        }
+
+        $scope.$watch($scope.totalCart, calculateDiscount);
+    }
+
+注意`CartController`的底部, 我们给用于计算所购买商品总价的`totalCart()`的值设置了一个监控. 每当这个值变化时, 监控都会调用`calculateDiscount()`, 并且会给discount(优惠项)设置一个适当的值. 如果总价为$100, 我们将设置优惠为$10. 否则, 优惠就为$0.
+
+你可以看到这个展示给用户的例子如图2-1所示:
+
+![use-$watch](figure/watch1.png)
+
+图2-1 Shopping cart with discount
+
+###watch()中的性能注意事项
+
+前面例子会正确的执行, 但是这里有一个潜在的性能问题. 虽然并不明显, 如果你在`totalCart()`中设置一个调试断点, 你会发现在渲染页面时它被调用了6次. 虽然在这个应用程序中你从来没有注意到它, 但是在更多复杂的应用程序中, 运行它6次可能是一个问题.
+
+为什么是6次? 其中3次我们可以很轻易的跟踪到, 因为它分别在下面三个过程中运行一次:
+
++ 在`{{totalCart() | currency}}`模板中
++ `subtotal()`函数中
++ `$watch()`函数中
+
+然后是Angular再运行它们一次, 因而带给我们6次运行. Angular这样做是为了验证在你的模型中变化是否完全传播出去以及验证你的模型是否稳定. Angular通过检查一份所监控属性的副本与它们当前值比较来确认它们是否改变. 事实上, Angular也可以运行它多达十次来确保是否完全传播开. 如果发生这种情况, 你可能需要依赖循环来修复它.
+
+虽然你现在会担心这个问题, 但是当你阅读完本书时它可能就不再是问题了. 然而Angular不得不在JavaScript中实现数据绑定, 我们一直与TC39的人共同努力实现一个底层的原生的`Object.observe()`. 一旦有了它, Angular将自动使用`Object.observe()`随时随地呈现给你一个原生效率的数据绑定.
+
+> 译注: [TC39](http://www.ecma-international.org/memento/TC39.htm)
+
+在下一章中你会看到, Angular有一个很好的Chrome调试扩展程序(Chrome插件)Batarang, 它将自动给你突出(高亮)昂贵的数据绑定(从性能的角度而言, 表示数据绑定的方式并不是较好的方式).
+
+> 译注:
+> 
+> + [Batarang](https://chrome.google.com/webstore/detail/ighdmehidhipcmcojjgiloacoafjmpfk) - 这是一个Angular调试与性能监控工具.
+> + [Batarang-Github](https://github.com/angular/angularjs-batarang)
+
+现在我们知道了这个问题, 这里有一些方法可以解决它. 一种方式是在items数组变化时创建`$watch`并且只重新计`$scope`的total, discount和subtotal属性值.
+
+做到这一点, 我们只需要使用这些属性更新模板:
+
+    <div>Total: {{bill.total | currency}}</div>
+    <div>Discount: {{bill.discount | currency}}</div>
+    <div>Subtotal: {{bill.subtotal | currency}}</div>
+    
+然后, 在JavaScript中, 我们要监控items数组, 以及调用一个函数来计算数组任意改变的总值:
+
+    function CartController($scope){
+        $scope.bill = {};
+        
+        $scope.items = [
+            {title: 'Paint pots', quantity: 8, price: 3.95},
+            {title: 'Polka dots', quantity: 17, price: 12.95},
+            {title: 'Pebbles', quantity: 5, price: 6.95}
+        ];
+        
+        var calculateTotals = function(){
+            var total = 0;
+            for(var i = 0, len = $scope.items.length; i < len; i++){
+                total = total + $scope.items[i].price * $scope.items[i].quantity;
+            }
+            
+            $scope.bill.totalCart = total;
+            $scope.bill.discount = total > 100 ? 10 : 0;
+            $scope.bill.subtotal = total - $scope.bill.discount;
+        };
+        
+        $scope.$watch('items', calculateTotals, true);
+    }
+    
+注意这里`$watch`指定了一个`items`字符串. 这可能是因为`$watch`函数可以接受一个函数(正如我们之前那样)或者一个字符串. 如果传递一个字符串给`$watch`函数, 在`$scope`调用的作用域中它将被当作一个表达式.
+
+这种测策略在你的应用程序中可能工作得很好. 然而, 由我监控的是items数组, Angular将会制作一个副本以供我们进行比较. 对于一个较大的items清单, 如果我们在Angular每一次计算页面结果时只重新计算bill属性值, 它可能表现得更好. 我们可以通过创建一个`$watch`来做到这一点, 它带有只用于重新计算属性的`watchFn`函数. 就像这样:
+
+    $scope.$watch(function(){
+        var total = 0;
+        for(var i = 0, i < $scope.items.length; i++){
+            total = total + $scope.items[i].price * $scope.items[i].quantity;
+        };
+        
+        $scope.bill.totalCart = total;
+        $scope.bill.discount = total > 100 ? 10 : 0;
+        $scope.bill.subtotal = total - $scope.bill.discount;
+    });
+
+####多个监控
+
+如果你想监控多个属性或者对象, 并且每当它们发生任何变化时都执行一个函数. 你有两个基本的选择:
+
++ 监控属性索引值.
++ 把它们放入数组或者对象总并且将传递的`deepWatch`设置为true.
+
+> 译注: 原文中两个选项排列顺序颠倒. 译文中纠正了顺序并给出对应的信息.
+
+在第一种情况下, 如果作用域中有一个对象拥有两个属性`a`和`b`, 并且希望在发生变化时执行`callMe()`函数, 你应该同时监控它们, 就像这样:
+
+    $scope.$watch('things.a + things.b', callMe(…));
+    
+当然, 属性`a`和`b`可能在不同的对象中, 只要你喜欢你也可以制作这个列表. 如果列表很长, 你可能更喜欢编写一个返回索引值的函数而不是依靠一个逻辑表达式.
+
+在第二种情况下, 你可能希望监控`things`对象中的所有属性. 在这种情况下, 你可以这样做:
+
+    $scope.$watch('things' calMe(…), true);
+    
+这里, 通过将第三个参数设置为`true`来要求Angular遍历`things`对象的属性并在它们发生任何改变时调用`callMe()`. 这同样适用于数组, 只是这里是针对一个对象.
+
+##使用模块组织依赖
+
+
+
+
+ 
+
+
+
 
 
 
