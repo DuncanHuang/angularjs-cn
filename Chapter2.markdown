@@ -1144,3 +1144,56 @@ Angular自带了几个过滤器, 像我们已经看到的currency:
 我们已经创建了一个带有多个视图的应用程序的基本结构. 我们通过改变URL来切换视图. 这意味着用户也能够使用前进和后退按钮进行工作. 用户可以在我们的应用程序中添加书签和邮件链接, 即使只有一个真正的HTML页面.
 
 ##对话服务器
+
+好了, 闲话少说. 实际的应用程序通常与真正的服务器通讯. 移动应用和新兴的Chrome桌面应用程序可能有些例外, 但是对于其他的一切, 你是否希望它持久保存云端或者与用户实时交互, 你可能希望你的应用程序与服务器通信.
+
+对于这一点Angular提供了一个名为`$http`的服务. 它有一个抽象的广泛的列表使得它能够很容易与服务器通信. 它支持普通的HTTP, JSONP以及CORS. 还包括防止JSON漏洞和XSRF的安全协议. 它让你很容易转换请求和数据响应, 甚至还实现了简单的缓存. 
+
+比方说, 我们希望从服务器检索购物站点的商品而不是我们的内存中模拟. 编写服务器的信息超出了本书的范围, 因此让我们想象一下我们已经创建了一个服务, 当你构造一个`/product`查询时, 它返回一个JSON形式的产品列表.
+
+给定一个响应, 看起来像这样:
+
+    [
+        {
+            "id": 0,
+            "title": "Paint pots",
+            "description": "Pots full of paint",
+            "price": 3.95
+        },
+        {
+            "id": 1,
+            "title": "Polka dots",
+            "description": "Dots with that polka groove",
+            "price": 12.95
+        },
+        {
+            "id": 2,
+            "title": "Pebbles",
+            "description": "Just little rocks, really",
+            "price": 6.95
+        }
+        … etc …     
+    ]
+   
+我们可以这样编写查询:
+
+    function ShoppingController($scope, $http){
+        $http.get('/products').success(function(data, status, headers, config){
+            $scope.items = data;
+        });
+    }
+    
+然后像这样在模板中使用它:
+
+    <body ng-controller="ShoppingController">
+        <h1>Shop!<h1>
+        <table>
+            <tr ng-repeat="item in items">
+                <td>{{item.title}}</td>
+                <td>{{item.description}}</td>
+                <td>{{item.price | currency}}</td>
+            </tr>
+        </table>
+    </body>
+    
+正如我们之前所学习到的, 从长远来看我们将这项工作委托到服务器通信服务上可以跨控制器共享是明智的. 我们将在第5章来看这个结构和全方位的讨论`$http`函数.
