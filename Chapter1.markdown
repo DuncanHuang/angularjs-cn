@@ -33,7 +33,7 @@
             <p>{{greeting.text}}, World</p>
         </div>
     </body>
-    </html>
+    </html>    
     
 然后我们在`controller.js`中编写逻辑:
 
