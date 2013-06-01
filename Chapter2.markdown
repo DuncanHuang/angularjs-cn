@@ -846,12 +846,133 @@ CountController定义如下:
 
 ##使用模块组织依赖
 
+在任何不平凡的应用程序中, 在你的代码领域中弄清楚如何组织功能职责通常都是一项间距的任务. 我们已经看到了控制器是如何到视图模板中给我们提供一个存放暴露正确数据和函数的区域. 但是我们在哪里安置支持应用程序的的其他代码呢? 最明显的方式就是将它们放置在控制器中的函数中.
 
+对于小型应用程序和目前我们所见过的例子这中方式工作得很好, 但是在实际的应用程序中将很快变得难以管理. 控制器将成为堆积一切以及我们需要做任何事情的垃圾场. 它们可能很难理解, 也可能很难改变(难以维护).
 
+引入模块. 在你的应用程序功能区, 它们提供了一种组织依赖的方式, 以及一种自解决依赖的机制(也称为依赖注入[*第一章中已经介绍了什么是依赖注入*]). 一般情况下, 我们称之为依赖关系服务, 它们给我们的应用程序提供特殊服务.
 
+比如, 如果在我们的购物网站中控制器需要从服务器获取一个出售项目列表, 我们需要一些对象--让我们称之为`Items`--注意这里是从服务器获取的项目. 反过来, `Items`对象, 需要一些方式通过XHR或者WebSockets与服务器上的数据库通信.
+
+不适用模块处理看起来像这样:
+
+    function ItemsViewController($scope){
+        // 向服务器发起请求
+        ...
+        
+        // 进入Items对象解析响应
+        ...
+        
+        // 在$scope中设置Items数组以便视图可以显示它
+    }
+
+然而这确实能够工作, 但是它存在一些潜在的问题.
+
++ 如果一些其他的控制器还需要从服务器获取`Items`, 那我们现在要复制这个代码. 这造成了维护的负担, 如果我们现在要构造模式或者其他的变化, 我们必须在好几个地方更新这个代码.
++ 考虑到其他因素, 如服务器验证, 解析复杂度等等, 这也是很难推断控制器对象职责界限的原因, 代码也很难阅读.
++ 对这段代码进行单元测试, 我们需要一台实际运行的服务器或者使用XMLHttpRequest打补丁返回模拟数据. 运行服务器进行测试将导致测试很慢, 配置它很痛苦, 它通常展示了测试中的碎片. 而打补丁的方式解决了速度和碎片问题, 但是这意味着你必须记住在测试中清理任何不定对象, 这样就带来了额外的复杂度和脆弱性, 因为它迫使你指定准确的线上版本的数据格式(每当格式变化时都需要更新测试).
+
+对于模块和从它们哪里获取的依赖注入, 我们就可以编写更简洁的控制器, 像这样:
+
+    function ShoppingController($scope, Items){
+        $scope.items = Items.query();
+    }
+        
+现在你可能会问自己, '当然, 这看起来很酷, 但是这个Items从哪里来?'. 前面的代码假设我们已经定义了作为服务的`Items`.
+
+服务是一个单独的对象(单例对象), 它执行必要的任务来支持应用程序的功能. Angular自带了很多服务, 例如`$location`, 用于与浏览器中的地址交互, `$route`, 用于基于位置(URL)的变化切换视图, 以及`$http`用于与服务器通信.
+
+你可以也应该创建你自己的服务去处理应用程序所有的特殊任务. 在需要它们时服务可以共享给任何控制器. 因此, 当你需要跨控制器通信和共享状态时使用它们是一个很好的机制. Angular绑定的服务都以`$`开头, 所以你也能够命名它们为任何你喜欢的东西, 这是一个很好的主意, 以避免使用`$`开头带来的命名冲突问题.
+
+你可以使用模块对象的API来定义服务. 这里有三个函数用于创建通用服务, 它们都有不同层次的复杂性和能力:
+
+<table>
+    <thead>
+        <tr>
+            <th>Function</th>
+            <th>定义(Defines)</td>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>provider(name, Object/constructor())</td>
+            <td>一个可配置的服务, 带有复杂的创建逻辑. 如果你传递一个对象, 它应该有一个名为`$get`的函数, 用于返回服务的实例. 否则, Angular会假设你传递了一个构造函数, 当调用它时创建实例.</td>
+        </tr>
+        <tr>
+            <td>factory(name, $get Function())</td>
+            <td>一个不可配置的服务也带有复杂的创建逻辑. 你指定一个函数, 当调用时, 返回服务实例. 你可以认为这和<code>provider(name, { $get: $getFunction()})</code>一样</td>
+        </tr>
+        <tr>
+            <td>service(name, constructor())</td>
+            <td>一个不可配置的服务, 其创建逻辑简单. 就像<code>provider</code>的构造函数选项, Angular调用它来创建服务实例.</td>
+        </tr>                
+    </tbody>
+</table>
+
+我们稍后再来看`provider()`的配置选项, 现在我们先来使用`factory()`讨论前面的Items例子. 我们可以像这样编写服务:
+
+    // Create a module to support our shopping views.
+    var shoppingModule = angular.module('ShoppingModule', []);
+    
+    // Set up service factory to create our Items interface to the server-side database
+    shoppingModule.factory('Items', function(){
+        var items = {};
+        items.query = function(){
+            // In real apps, we'd pull this data from the server…
+            return [
+                {title: 'Paint pots', description: 'Pots full of paint', price: 3.95},
+                {title: 'Polka dots', description: 'Dots with polka', price: 2.95},
+                {title: 'Pebbles', description: 'Just little rocks', price: 6.95}
+            ];
+        };
+        
+        return items;
+    });
+    
+当Angular创建`ShoppingController`时, 它会将`$scope`和我们刚才定义的新的Items服务传递进来. 这是通过参数名称匹配完成的. 也就是说, Angular会看到我们的`ShoppingController`类的函数签名, 并通知它(控制器)发现一个Items对象. 由于我们定义Items为一个服务, 它会知道从哪里获取它.
+
+以字符串的形式查询这些依赖结果意味着作为参数注入的函数就像控制器的构造函数一样是顺序无关的. 并不是必须这样:
+
+    function ShoppingController($scope, Items){...}    
  
+我们也可以这样编写:
 
+    function ShoppingController(Items, $scope){...}
 
+依然和我们所希望的功能一样.
+
+为了在模板中使用它, 我们需要告诉`ng-app`指令我们的模块名称, 就像下面这样:
+
+    <html ng-app="ShoppingModule">
+    
+为了完成这个例子, 我们可以这样实现模板的其余部分:
+
+    <body ng-controller="ShoppingController">
+        <h1>Shop!</h1>
+        <table>
+            <td>{{item.title}}</td>
+            <td>{{item.description}}</td>
+            <td>{{item.price | currency}}</td>
+        </table>
+    </body>
+    
+应用的返回结果看起来如图2-2所示:
+
+![use-module](figure/useModule.png)
+
+图2-2 Shop items
+
+###我们需要多少模块?
+
+作为服务本身可以有依赖关系, Module API允许你在的依赖中定义依赖关系.
+
+在大多数应用程序中, 创建一个单一的模块将所有的代码放入其中并将所有的依赖也放在里面足以很好的工作. 如果你使用来自第三方库的服务或者指令, 它们自带有其自身的模块. 由于你的应用程序依赖它们, 你可以引用它们作为你的应用程序的依赖.
+
+举个例子, 如果你要包含(虚构的)模块SnazzyUIWidgets和SuperDataSync, 应用程序的模块声明看起来像这样:
+
+    var appMod = angular.module('app', ['SnazzyUIWidgets', 'SuperDataSync']);
+
+##使用过滤器格式化数据
 
 
 
