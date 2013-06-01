@@ -4,10 +4,10 @@
 
 运行结果如下图所示.
 
-1. 初始化
++ 初始化
 
 ![list](figure1.png)
 
-2. 邮件信息
++ 邮件信息
 
 ![message](figure2.png)
