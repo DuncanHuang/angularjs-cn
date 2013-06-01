@@ -974,6 +974,52 @@ CountController定义如下:
 
 ##使用过滤器格式化数据
 
+过滤器允许你在模板中使用插值方式声明如何转换数据并显示给用户. 使用过滤器的语法如下:
+
+    {{expression | filterName : parameter1 : … parameterN }}s
+    
+其中表达式是任意的Angular表达式, `filterName`是你想使用的过滤器名称, 过滤器的参数使用冒号分割. 参数自身也可以是任意有效的Angular表达式.
+
+Angular自带了几个过滤器, 像我们已经看到的currency:
+
+    {{12.9 | currency}}
+    
+这段代码显示如下:
+
+> $12.9
+
+你不仅限于使用绑定的过滤器(Angular内置的), 你可以简单的编写你自己的过滤器. 例如, 如果我们想创建一个过滤器来让标题的首字母大写, 我们可以像下面这样做:
+
+    var homeModule = angular.module('HomeModule', []);
+    homeModule.filter('titleCase', function(){
+        var titleCaseFilter = function(input){
+            var words = input.split(' ');
+            for(var i = 0; i < words.length; i++){
+                words[i] = words[i].charAt(0).toUpperCase() + words[i].slice(1);
+            }
+            
+            return words.join(' ');
+        };
+        return titleCaseFilter;
+    });
+
+有一个像这样的模板:
+
+    <body ng-app="HomeModule" ng-controller="HomeController">
+        <h1>{{pageHeading | titleCase}}</h1>
+    </body>
+    
+然后通过控制器插入`pageHeading`作为一个模型变量:
+
+    function HomeController($scope){
+        $scope.pageHeading = 'behold the majesty of you page title';
+    }
+    
+我们会看到如图2-3所示的东西:
+
+![titleCase](figure/titleCase.png)
+
+图2-3 Title case filter
 
 
 
