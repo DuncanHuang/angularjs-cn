@@ -974,6 +974,198 @@ CountController定义如下:
 
 ##使用过滤器格式化数据
 
+过滤器允许你在模板中使用插值方式声明如何转换数据并显示给用户. 使用过滤器的语法如下:
+
+    {{expression | filterName : parameter1 : … parameterN }}
+    
+其中表达式是任意的Angular表达式, `filterName`是你想使用的过滤器名称, 过滤器的参数使用冒号分割. 参数自身也可以是任意有效的Angular表达式.
+
+Angular自带了几个过滤器, 像我们已经看到的currency:
+
+    {{12.9 | currency}}
+    
+这段代码显示如下:
+
+> $12.9
+
+你不仅限于使用绑定的过滤器(Angular内置的), 你可以简单的编写你自己的过滤器. 例如, 如果我们想创建一个过滤器来让标题的首字母大写, 我们可以像下面这样做:
+
+    var homeModule = angular.module('HomeModule', []);
+    homeModule.filter('titleCase', function(){
+        var titleCaseFilter = function(input){
+            var words = input.split(' ');
+            for(var i = 0; i < words.length; i++){
+                words[i] = words[i].charAt(0).toUpperCase() + words[i].slice(1);
+            }
+            
+            return words.join(' ');
+        };
+        return titleCaseFilter;
+    });
+
+有一个像这样的模板:
+
+    <body ng-app="HomeModule" ng-controller="HomeController">
+        <h1>{{pageHeading | titleCase}}</h1>
+    </body>
+    
+然后通过控制器插入`pageHeading`作为一个模型变量:
+
+    function HomeController($scope){
+        $scope.pageHeading = 'behold the majesty of you page title';
+    }
+    
+我们会看到如图2-3所示的东西:
+
+![titleCase](figure/titleCase.png)
+
+图2-3 Title case filter
+
+##使用路由和$location更新视图
+
+尽管Ajax从技术上讲是单页应用程序(理论上它们仅仅在第一次请求时加载HTML页面, 然后只需在DOM中更新区块), 我们通常会有多个子页面视图用于适当的显示给用户或者隐藏.
+
+我们可以使用Angular的`$route`服务来给我们管理这个场景. 让你指定路由, 对于浏览器指向给定的URL, Angular将加载并显示一个模板, 并且实例化一个控制器给模板提供上下文环境.
+
+通过调用`$routeProvider`服务的功能作为配置块来在你的应用程序中创建视图. 就像这样的伪代码:
+
+    var someModule = angular.module('someModule', [… Module dependencies …]);
+    someModule.config(function($routeProvider){
+        $routeProvider.
+            when('url', {controller: aController, templateUrl: '/path/to/template'}).
+            when(…other mappings for your app …).
+            … 
+            otherwise(…what to do if nothing else matches…);
+    });
+
+上面的代码表示当浏览器的URL变化为指定的URL时, Angular将从`/path/to/template`中加载模板, 并使用`aController`关联这个模板的根元素(就像我们输入`ng-controller=aController`).
+
+在最后一行调用`otherwise()`用于告诉路由如果没有其他的匹配则跳到哪里.
+
+让我们来使用一下. 我们正在构建一个email应用程序将轻松的战胜Gmail, Hotmail以及其他的. 我们暂且称它为A-mail. 现在, 让我们从简单的开始. 我们的首屏中显示一个包括日期, 标题以及发送者的邮件信息列表. 当你点击一个信息, 它应该向将邮件的正文信息显示给你.
+
+> 由于浏览器的安全限制, 如果你想自己测试这些代码, 你需要在一个Web服务奇商进行而不是使用`file://`. 如果你安装了Python, 你可以在你的工作目录通过执行`python -m SimpleHTTPServer 8888`来使用这些代码.
+
+对于主模板, 我们会做一点不同的东西. 而不是将所有的东西都放在首屏来加载, 我们只会创建一个用于放置视图的布局模板. 我们会持续在视图中放置视图, 比如菜单. 在这种情况下, 我们只需要显示一个标题包含应用的名称. 然后使用`ng-view`指令来告诉Angular我们希望视图出现在哪里.
+
+###*index.html*
+
+    <html ng-app="Amail">
+        <head>
+            <script src="js/angular.js"></script>
+            <script src="js/controllers.js"></script>
+        </head>
+        <body>
+            <h1>A-Mail</h1>
+            <div ng-view></div>
+        </body>
+    </html>
+    
+由于我们的视图模板将被插入到刚刚创建的容器中, 我们可以把它们编写为局部的HTML文档. 对于邮件列表, 我们将使用`ng-repeat`来遍历信息列表并将它们渲染到一个表格中.
+
+###*list.html*
+
+    <table>
+        <tr>
+            <td><strong>Sender</strong></td>
+            <td><strong>Subject</strong></td>
+            <td><strong>Date</string></td>
+        </tr>
+        <tr ng-repeat="message in messages">
+            <td>{{message.sender}}</td>
+            <td><a href='#/view/{{message.id}}'>{{message.subject}}</td>
+            <td>{{message.date}}</td>
+        </tr>
+    </table>
+
+注意这里我们打算让用户通过点击主题将他导航到详细信息中. 我们将URL数据绑定到`message.id`上, 因此点击一个`id=1`的消息将使用户跳转到`/#/view/1`. 我们将通过url进行导航, 也称为深度链接, 在详细信息视图的控制器中, 让特定的消息对应一个详情视图.
+
+为了创建消息的详情视图, 我们将创建一个显示单个message对象属性的模板.
+
+###*detail.html*
+
+    <div><strong>Subject:</strong> {{message.subject}}</div>
+    <div><strong>Sender:</strong> {{message.sender}}</div>
+    <div><strong>Date:</strong> {{message.date}}</div>
+    <div>
+        <strong>To:</strong>
+        <span ng-repeat="recipient in message.recipients">{{recipient}}</span>
+    </div>
+    <div>{{message.message}}</div>
+    <a href="#/">Back to message list</a>
+
+现在, 将这些模板与一些控制器关联起来, 我们将配置`$routeProvider`与URLs来调用控制器和模板.
+
+###*controllers.js*
+
+    //Create a module for our core AMail services
+    var aMailServices = angular.module('AMail', []);
+    
+    //Set up our mappings between URLs, tempaltes. and  controllers
+    function emailRouteConfig($routeProvider){
+        $routeProvider.
+        when('/', {
+            controller: ListController,
+            templateUrl: 'list.html'
+        }).
+        // Notice that for the detail view, we specify a parameterized URL component by placing a colon in front of the id
+        when('/view/:id', {
+            controller: DetailController,
+            templateUrl: 'detai.html'
+        }).
+        otherwise({
+            redirectTo: '/'
+        });
+    };
+    
+    //Set up our route so the AMailservice can find it
+    aMailServices.config(emailRouteConfig);
+    
+    //Some take emails
+    messages = [{        id: 0, sender: 'jean@somecompany.com',
+        subject: 'Hi there, old friend',
+        date: 'Dec 7, 2013 12:32:00',
+        recipients: ['greg@somecompany.com'],
+        message: 'Hey, we should get together for lunch somet ime and catch up. There are many things we should collaborate on this year.'    },{        id: 1, sender: 'maria@somecompany.com',
+        subject : 'Where did you leave my laptop?' ,        date: 'Dec 7, 2013 8:15:12',
+        recipients: ['greg@somecompany.com'],
+        message: 'I thought you were going to put it in my desk drawer. But i t does not seem to be there. '    },{        id: 2, sender: 'bill@somecompany.com',
+        subject: 'Lost python',        date: 'Dec 6, 2013 20:35:02',
+        recipients: ['greg@somecompany.com'],
+        message: "Nobody panic, but my pet python is missing from her cage. She doesn't move too fast, so just call me if you see her."    }];
+    // Publish our messages for the list template
+    function ListController($scope){
+        $scope.messages = messages;    }
+    //Get the message id fron the route (parsed from the URL) and use it to find the right message object.
+    function DetailController($scope, $routeParams){
+        $scope.message = messages[$routeParams.id];
+    }
+    
+我们已经创建了一个带有多个视图的应用程序的基本结构. 我们通过改变URL来切换视图. 这意味着用户也能够使用前进和后退按钮进行工作. 用户可以在我们的应用程序中添加书签和邮件链接, 即使只有一个真正的HTML页面.
+
+##对话服务器 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
