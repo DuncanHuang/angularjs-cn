@@ -56,7 +56,7 @@
   + index.html
   + controller.js
 + 验证用户输入
-+ 继续
++ 小结
 
 ##第3章 AngularJS开发
 

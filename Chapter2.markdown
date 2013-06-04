@@ -1197,3 +1197,134 @@ Angular自带了几个过滤器, 像我们已经看到的currency:
     </body>
     
 正如我们之前所学习到的, 从长远来看我们将这项工作委托到服务器通信服务上可以跨控制器共享是明智的. 我们将在第5章来看这个结构和全方位的讨论`$http`函数.
+
+##使用指令更新DOM
+
+指令扩展HTML语法, 也是将行为与DOM转换的自定义元素和属性关联起来的方式. 通过它们, 你可以创建复用的UI组件, 配置你的应用程序, 做任何你能想到在模板中要做的事情.
+
+你可以使用Angular自带的内置指令编写应用, 但是你可能会朋友你希望运行你自己所编写的指令的情况. 当你希望处理浏览器事件和修改DOM时, 如果无法通过内置指令支持, 你会知道是时候打破指令规则了. 你所编写的代码在指令中, 不是在控制器中, 服务中, 也不是应用程序的其他地方.
+
+与服务一样, 通过module对象的API调用它的`directive()`函数来定义指令, 其中`directiveFunction`是一个工厂函数用于定义指令的功能(特性).
+
+	var appModule = angular.module('appModule', [...]);
+	appModule.directive('directiveName', directiveFunction);
+
+编写指令工厂函数是很深奥的, 因此在这本书中我们专门顶一个完整的一章. 吊吊你的胃口, 不过, 我们先来看一个简单的例子.
+
+HTML5中有一个伟大的称为`autofocus`的新属性, 将键盘的焦点放到一个input元素. 你可以使用它让用户第一时间通过他们的键盘与元素交互而不需要点击. 这是很好的, 因为它可以让你声明指定你希望浏览器做什么而无需编写任何JavaScript. 但是如果你希望将焦点放到一些非input元素上, 像链接或者任何`div`上会怎样? 如果你希望它也能工作在不支持HTML5中会怎样? 我们可以使用一个指令做到这一点.
+
+	var appModule = angular.module('app', []);
+	
+	appModule.directive('ngbkFocus', function(){
+		return {
+			link: function(scope, elements, attrs, controller){
+				element[0].focus();
+			}
+		};
+	});
+
+这里, 我们返回指令配置对象带有指定的link函数. 这个link函数获取了一个封闭的作用域引用, 作用域中的DOM元素, 传递给指令的任意属性数组, 以及DOM元素的控制器, 如果它存在. 这里, 我们仅仅只需要获取元素并调用它的`focus()`方法.
+
+然后我们可以像这样在一个例子中使用它:
+
+###*index.html*
+
+	<html lang="en" ng-app="app">
+		...include angular and other scripts...
+		<body ng-controller="SomeController">
+			<button ng-click="clickUnfocused()">
+				Not focused
+			</button>
+			<button ngbk-focus ng-click="clickFocused()">
+				I'm very focused!
+			</button>
+			<div>{{message.text}}</div>
+		</body>
+	</html>
+
+###*controller.js*
+
+	function SomeController($scope) {
+		$scope.message = { text: 'nothing clicked yet' };
+
+		$scope.clickUnfocused = function() {
+			$scope.message.text = 'unfocused button clicked';
+		};
+
+		$scope.clickFocused = function {
+			$scope.message.text = 'focus button clicked';
+		}
+	}
+
+	var appModule = angular.module('app', ['directives']);
+
+当载入页面时, 用户将看到标记为"I'm very focused!"按钮带有高亮焦点. 敲击空格键或者回车键将导致点击并调用`ng-click`, 将设置div的文本为"focus button clicked". 在浏览器中打开这个页面, 我们将看到如图2-4所示的东西:
+
+![foucsed](figure/custom-directive.png)
+
+图2-4 Foucs directive
+
+##验证用户输入
+
+Angular带有几个适用于单页应用程序的不错的功能来自动增强`<form>`元素. 其中之一个不错的特性就是Angular让你在表单内的input中声明验证状态, 并允许在整组元素通过验证的情况下才提交.
+
+例如, 如果我们创建一个登录表单, 我们必须输入一个名称和email, 但是有一个可选的年龄字段, 我们可以在他们提交到服务器之前验证多个用户输入. 如下加载这个例子到浏览器中将显示如图2-5所示:
+
+![valid](figure/signup.png)
+
+图2-5. Form validation
+
+我们还希望确保用户在名称字段输入文本, 输入正确形式的email地址, 以及他可以输入一个年龄, 它才是有效的.
+
+我们可以在模板中做到这一点, 使用Angular的`<form>`扩展和各个input元素, 就像这样:
+
+	<h1>Sign Up</h1>
+	<form name='addUserForm'>
+		<div>First name: <input ng-model='user.first' required></div>
+		<div>Last name: <input ng-model='user.last' required></div>
+		<div>Email: <input type='email' ng-model='user.email' required></div>
+		<div>Age: <input type='number' ng-model='user.age' ng-maxlength='3' ng-minlength='1'></div>
+		<div><button>Submit</button></div>
+	</form>
+
+注意, 在某些字段上我们使用了HTML5中的`required`属性以及`email`和`number`类型的input元素来处理我们的验证. 这对于Angular来说是很好的, 在老式的不支持HTML5的浏览中, Angular将使用形式相同职责的指令.
+
+然后我们可以通过改变引用它的形式来添加一个控制器处理表单的提交.
+
+	<form name='addUserForm' ng-controller="AddUserController">
+
+在控制器里面, 我们可以通过一个称为`$valid`的属性来访问这个表单的验证状态. 当所有的表单input通过验证的时候, Angular将设置它($valid)为true. 我们可以使用`$valid`属性做一些时髦的事情, 比如当表单还没有完成时禁用提交按钮.
+
+我们可以防止表单提交进入无效状态, 通过给提交按钮添加一个`ng-disabled`.
+
+	<button ng-disabled='!addUserForm.$valid'>Submit</button>
+
+最后, 我们可能希望控制器告诉用户她已经添加成功了. 我们的最终模板看起来像这样:
+
+
+	<h1>Sign Up</h1>
+	<form name='addUserForm' ng-controller="AddUserController">
+		<div ng-show='message'>{{message}}</div>
+		<div>First name: <input name='firstName' ng-model='user.first' required></div>
+		<div>Last name: <input ng-model='user.last' required></div>
+		<div>Email: <input type='email' ng-model='user.email' required></div>
+		<div>Age: <input type='number' ng-model='user.age' ng-maxlength='3'
+		ng-min='1'></div>
+		<div><button ng-click='addUser()'
+		ng-disabled='!addUserForm.$valid'>Submit</button>
+	</form>
+
+接下来是控制器:
+
+	function AddUserController($scope) {
+		$scope.message = '';
+
+		$scope.addUser = function () {
+			// TODO for the reader: actually save user to database...
+			$scope.message = 'Thanks, ' + $scope.user.first + ', we added you!';
+		};
+	}
+
+##小结
+
+在前两章中, 我们看到了Angular中所有最常用的功能(特性). 对每个功能的讨论, 许多额外的细节信息都没有覆盖到. 在下一章, 我们将让你通过研究一个典型的工作流程了解更多的信息.
