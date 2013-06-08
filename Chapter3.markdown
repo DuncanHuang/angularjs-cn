@@ -213,3 +213,31 @@ Karma存在的主要的原因是它让你的测试驱动开发(TDD)流程变得�
 	karma run
 
 就是这样. 运行这个命令之后, 你应该获得正好打印在控制台中的结果. 很简单, 不是吗?
+
+##单元测试
+
+AngularJS是的编写单元测试变得更简单, 默认情况下支持编写[Jasmine](http://pivotal.github.io/jasmine/)风格的测试(就是Karma). Jasmine就是我们所说的行为驱动开发框架, 它允许你编写规范来说明你的代码行为应该如何表现. 一个Jasmine测试范例看起来可能是这样子的.
+
+	describe("MyController:", function(){
+		it("to work correctly", function(){
+			var a = 12;
+			var b = a;
+
+			expect(a).toBe(b);
+			expect(a).not.toBe(null);
+		});
+	});
+
+正如你可以看到, 它本身就是非常容易阅读的格式, 大部分的代码都可以用简单的英文来阅读理解. 它还提供了一个非常多样化和强大的匹配集合(就像`expect`从句), 当然它还有[xUnit](http://xunit.codeplex.com/)常用的`setUp`和`tearDowns`(函数在每个独立的测试用例之前或者之后执行).
+
+AngularJS提供了一些优雅的原型, 和测试函数一样, 它允许你有在单元测试中创建服务, 控制器和过滤器的权利, 以及模拟`HTTPRequests`输出等等. 我们将在第五章讨论这个.
+
+Karma可以使它很容易的集成到你的开发流程中, 以及在你编写的代码中获取即时的反馈.
+
+**集成到IDEs中**
+
+Karma并没有所有最新版和最好的(greatest)IDEs使用的插件(已经实现的还没有), 但实际上你并不需要. 所有你所需要做的就是在你的IDEs中添加一个执行"karma start"和"karma run"的快捷命令. 这通常可以通过添加一个简单的脚本来执行, 或者实际的shell命令, 依赖于你所选择的编辑器. 当然, 每次完成运行你都应该看到结果.
+
+**在每一个变化上运行测试**
+
+这是许多TDD开发者的理想国: 能够运行在它们所有的测试中, 每次它们按下保存, 在急毫秒之内迅速的得到返回结果. 使用AngularJS和Karma可以很容易做到这一点. 事实证明, Karma配置文件(记住就是前面的`karma.conf.js`)有一个看似无害的名为**`autoWatch`**的标志. 设置它为true来告诉Karma每次运行你的测试文件(这就是你的源代码和测试代码)都监控它的变化. 然后在你的IDE中执行"karma start", 猜猜会怎样? Karma运行结果将可供你的IDE使用. 你甚至不需要切换控制台或者终端来了解发生了什么.
