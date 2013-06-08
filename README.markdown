@@ -65,8 +65,8 @@
   + IDEs
 + 运行你的应用程序
   + 使用Yeoman
-  + 不适用Yeoman
-+ 使用AngularJS测试
+  + 不使用Yeoman
++ 测试AngularJS
   + Karma
 + 单元测试
 + 端到端/集成测试

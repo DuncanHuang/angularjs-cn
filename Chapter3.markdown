@@ -106,3 +106,49 @@ AngularJS只是你开发实际网页的工具箱的一部分. 在这一节, 我�
 然后按`Tab`键获取同样的代码. 这只是大多数代码自动完成插件提供的功能之一.
 
 ##运行你的应用程序
+
+现在让我们讨论如何运行所有你所做的事情 - 查看应用程序活动起来, 在浏览器中. 真实的感受以下应用程序是如何工作, 我们需要一个服务器来服务于我们的HTML和JavaScript代码. 我将探讨两种方式, 一种非常简单的方式是使用Yeoman运行应用程序, 另外一种不是很容易的不用Yeoman的方法, 但是同样很好.
+
+###使用Yeoman
+
+Yeoman让你很简单的使用一个Web服务器服务你所有的静态资源和相关的JavaScript文件. 只需要运行以下命令:
+	
+	yeoman server
+
+它将启动一个服务器同时在你的浏览器中打开AngularJS应用程序的主页. 每当你改变你的源代码时, 它甚至会刷新(自动刷新)浏览器. 很酷不是吗?
+
+###不使用Yeoman
+
+如果不使用Yeoman, 你可能需要配置一个服务器来服务你所有主目录中的文件. 如果你不知道一个简单的方法做到这一点, 或者不想浪费时间创建你自己的Web服务器, 你可以在Node.js中使用ExpressJS快速的编写一个简单的Web服务器(只要简单的使用`npm install -g express`来获取它). 它可能看起来像下面这样:
+
+	//available at chapter3/sample-app/web-server.js
+
+	var express = require('express'),
+	    app = express(),
+	    port = parseInt(process.env.PORT, 10) || 8080;
+		app.configure(function(){
+			app.use(express.methodOverride());
+			app.use(express.bodyParser());
+			app.use(express.static(__dirname + '/'));
+			app.use(app.router);
+		});
+
+	app.listen(port);
+	console.log("Now serving the app at http://localhost:" + port + "app");
+
+一旦你有了这个文件, 你就可以使用Node运行这个文件, 通过使用下面的命令:
+
+	node web-server.js
+
+同时它将在8080端口启动服务器(或者你自己选择端口).
+
+可选的, 在应用程序文件夹中使用Python你应该运行:
+
+	python -m SimpleHTTPServer
+
+无论你是否决定继续, 一旦你配置好服务器并运行起来, 都将被导航导下面的URL:
+
+	http://localhost:[port-number]/app/index.html
+
+然后你就可以在浏览器中查看你刚刚创建的应用程序. 注意, 你需要手动的刷新浏览器来查看改变, 不同于使用Yeoman.
+
