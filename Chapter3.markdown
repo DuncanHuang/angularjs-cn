@@ -71,3 +71,38 @@ AngularJS自带了端对端的测试支持以正确的方式内置到库里面. 
 你可能会问: 如何运行我的应用程序? 什么是单元测试? 甚至我该如何编写你们所讨论的这种各样的零件?
 
 别担心, 年轻的蚱蜢, 所有的这些在适当的时间都会解释. 在这一章里面, 我们将处理设置项目和开发环境的问题, 因此一旦我们掺入一些惊人的代码, 那些问题都可以快速的带过. 你所编写的代码以及如何将它们与你最终的惊人的应用程序联系在一起的问题, 我们将在接下来的几章中讨论.
+
+##工具
+
+AngularJS只是你开发实际网页的工具箱的一部分. 在这一节, 我们将一起开看看一些你用以确保高效和快速开发的不同的工具, 从IDEs到测试运行器到调试工具.
+
+###IDEs
+
+让我们从你如何编写源代码开始. 有大量的JavaScript编辑器可以选择, 有免费的也有付费的. 长时间以来的事实证明Emacs和Vi是开发JS的最好选择. 现在, 各种IDEs都自带了语法高亮, 自动完成以及其他功能, 它给你一个选择的余地, 这可能是值得的. 那么, 应该使用那一个呢?
+
+如果你不介意付几十块钱(尽管它有一个30天的免费试用期), [WebStorm](www.jetbrains.com/webstorm/‎)是个不错的选择, 当今时代, WebStorm由JetBrains提供了最广泛的Web开发平台. 它所具有的特性, 在之前只有强类型语言才有, 包括代码自动完成(如图3-1所示, 指定浏览器版本), 代码导航, 语法和多无高亮, 同时支持多个库和框架的启动即可使用. 此外, 它还漂亮的集成了在IED中正确的调试JavaScript的功能, 而且这些都是基于Chrome执行的.
+
+![ide](figure/3-1.png)
+
+最大的你应该考虑使用WebStorm开发AngularJS原因是它是唯一继承AngularJS插件的IDEs. 这个插件支持在你的HTML模板中正确的自动完成AngularJS的HTML标签. 这些都是常用的代码片段, 否则你每次都要输入拼凑的代码片段. 因此不应该像下面这样输入:
+
+	directive('$directiveName$', function factory($injectables$){
+		var directiveDefinitionObject = {
+			$directiveAttr$;
+			compile: function complie(tElement, tAttrs, transclude){
+				$END$;
+				return function(scope, elements, attrs){
+					//...
+				}
+			}
+		};
+		return directiveDefinitionObject;
+	});
+
+在WebStorm中, 你可以只输入以下内容:
+
+	ngdc
+
+然后按`Tab`键获取同样的代码. 这只是大多数代码自动完成插件提供的功能之一.
+
+##运行你的应用程序
