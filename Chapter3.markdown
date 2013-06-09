@@ -241,3 +241,64 @@ Karma并没有所有最新版和最好的(greatest)IDEs使用的插件(已经实
 **在每一个变化上运行测试**
 
 这是许多TDD开发者的理想国: 能够运行在它们所有的测试中, 每次它们按下保存, 在急毫秒之内迅速的得到返回结果. 使用AngularJS和Karma可以很容易做到这一点. 事实证明, Karma配置文件(记住就是前面的`karma.conf.js`)有一个看似无害的名为**`autoWatch`**的标志. 设置它为true来告诉Karma每次运行你的测试文件(这就是你的源代码和测试代码)都监控它的变化. 然后在你的IDE中执行"karma start", 猜猜会怎样? Karma运行结果将可供你的IDE使用. 你甚至不需要切换控制台或者终端来了解发生了什么.
+
+##端到端/集成测试
+
+随着应用程序的发展(或者有这个趋势, 事实上很快, 之前你甚至已经意识到这一点), 测试它们是否如预期那样工作而不需要手动的裁剪任何功能. 毕竟, 没一添加新的特性, 你不仅要验证新特性的工作, 还要验证老特性是否仍然更够正常工作, 并且没有bug和功能也没有退化. 如果你开始添加多个浏览器, 你可以很容看出, 其实这些可以变成一个组合.
+
+AngularJS视图通过提供一个Scenario Runner来模拟用户与应用程序交互来缓解这种现象.
+
+Scenario Runner允许你按照类Jasmine的语法来描述应用程序. 正如之前的单元测试, 我们将会有一些的`describes`(针对这个特性), 同时它还是独立(描述每个单独功能的特性). 和往常一样, 你可以有一些共同的行为, 对于执行每个规范之前和之后.(我们称之为测试).
+
+来看一个应用程序示例, 他返回过滤器结果列表, 看起来可能像下面这样:
+
+	describe("Search Results", function(){
+		beforeEach(function(){
+			browser().navigateTo("http://localhost:8000/app/index.html");
+		});
+		it("Should filter results", function(){
+			input("searchBox").enter("jacksparrow");
+			element(":button").click();
+			expect(repeater("ul li").count()).toEqual(10);
+			input("filterText").enter("Bees");
+			expect(repeater("ul li").count()).toEqual(1);
+		});
+	});
+
+有两种方式运行这些测试. 不过, 无论使用那种方式运行它们, 你都必须有一个Web服务器来启动你的应用程序服务(请参见上一节来查看如何做到这一点). 一旦做到这一点, 可以使用下列方法之一:
+
+1. **自动化**: Karma现在支持运行Angular情景测试. 创建一个Karma配置文件然后进行以下改变:
+
+  a. 添加一个ANGULAR_SCENARIO & ANGULAR_SCENARIO_ADAPTER到配置的文件部分.
+
+  b. 添加一个代理服务器将请求定位到正确的测试文件所在目录, 例如:
+
+  	proxies = {'/': 'http://localhost:8000/test/e2e'};
+  
+  c. 添加一个Karma root(根目录/基础路径)以确保Karma的源文件不会干扰你的测试, 像这样:
+
+  	urlRoot = '/_karma_/';
+
+  然后只需要记得通过浏览`http://localhost:9876/_karma_`来捕捉Karma服务器, 你应该使用Karma自由的运行你的测试.
+
+ 2. **手动**: 手动的方法允许你从你的Web服务器上打开一个简单的页面运行(和查看)所有的测试.
+
+  a. 创建一个简单的`runner.html`文件, 这来源于Angular库的`angular-scenario.js`文件.
+
+  b. 所有的JS源文件都遵循你所编写的你的场景组件部分的规范.
+
+  c. 启动你的Web服务器, 浏览`runner.html`文件.
+
+为什么你应该使用Angular场景运行器, 或者说是外部的第三方库活端对端的测试运行器? 使用场景运行器有令人惊讶的好处, 包括:
+
+**AngularJS意识**
+
+Angular场景情运行器, 顾名思义, 它是由Angular创建的. 因此, 他就是Angular aware, 它直到并理解各种各样的Angular元素, 类似绑定. 需要输入一些文本? 检查绑定的值? 验证中继器(repeater)状态? 所有的这些都可以通过场景运行器轻松的完成.
+
+**无需随机等待**
+
+Angular意识也意味着Angular直到所有的XHR何时向服务器放出, 从而可以避免页面加载所等待的间隔时间. 场景运行器直到何时加载一个页面, 从而比Selenium测试更具确定性, 例如, 超时等待页面加载时任务可能失败.
+
+**调试功能** 
+
+探究JavaScript, 如果你查看你的代码不是很好; 当你希望暂停和恢复测试时, 所有的这些都运行场景测试吗? 然而所有的这一切通过Angular场景运行器都是可行的, 等等.
