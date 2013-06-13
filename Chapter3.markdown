@@ -281,7 +281,7 @@ Scenario Runner允许你按照类Jasmine的语法来描述应用程序. 正如�
 
   然后只需要记得通过浏览`http://localhost:9876/_karma_`来捕捉Karma服务器, 你应该使用Karma自由的运行你的测试.
 
- 2. **手动**: 手动的方法允许你从你的Web服务器上打开一个简单的页面运行(和查看)所有的测试.
+2. **手动**: 手动的方法允许你从你的Web服务器上打开一个简单的页面运行(和查看)所有的测试.
 
   a. 创建一个简单的`runner.html`文件, 这来源于Angular库的`angular-scenario.js`文件.
 
