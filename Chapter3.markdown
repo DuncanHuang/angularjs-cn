@@ -434,3 +434,67 @@ Figure 3-5. AngularJS properties within Batarang
 然后只需按照打印的只是来获取Yeoman.
 
 对于Windows机器, 或者运行它是遇到任何问题, 到[https://github.com/yeoman/yeoman/ wiki/Manual-Install](https://github.com/yeoman/yeoman/ wiki/Manual-Install)并按照说明来安装会让你畅通无阻.
+
+###启动一个新的AngularJS项目
+
+正如前面所提到的, 甚至一个简单的项目都有许多技术需要处理, 从模板到基础控制, 再到库依赖, 一切事情都需要结构化. 你可以手动的做这些工作, 或者也可以使用Yeoman处理它.
+
+只需为你的项目中简单的创建一个目录(Yeoman将把目录名称当作项目名称), 然后运行下面的命令:
+
+	yeoman init angular
+
+这将创建一个本章项目优化部分所详细描述的一个完整的结构, 包括渲染路由的框架, 单元测试等等.
+
+###运行服务器
+
+如果你不适用Yeoman, 那么你不得不创建一个HTTP服务器来服务你的前端代码. 但是如果使用Yeoman, 那么你将获得一个内置的预先配置好的服务器并且还能获得一些额外的好处. 你可以使用下面的命令启动服务器:
+
+	yeoman server
+
+这不单单只启动一个Web服务器来服务于你的代码, 它还会自动打开你的Web浏览器并在你改变你的应用程序时刷新你的浏览器.
+
+###添加新的路由, 视图和控制器
+
+添加一个新的Angular路由涉及多个步骤, 其中包括:
+
++ 在`index.html`中启用新的控制器JS文件
++ 添加正确的路由到AngularJS模块中
++ 创建HTML模板
++ 添加单元测试
+
+所有的这些在Yeoman中使用下面的命令可以在一步完成:
+
+	yeoman init angular:route routeName
+
+因此, 如果你运行`yeoman iniy angular route home`结束之后它将执行以下操作:
+
++ 在`app/scripts/controllers`目录中创建一个`home.js`控制器骨架
++ 在`test/specs/controllers`目录中创建一个`home.js`测试规范
++ 将`home.html`模板添加到`app/views`目录中
++ 链接主引用模块中的home路由(在app/scripts/app.js`文件中)
+
+所有的这些都只需要一条单独的命令!
+
+###测试的故事
+
+我们已经看过使用Karma如何轻松的启动和运行测试. 最终, 运行所有的单元测试只需要两条命令.
+
+Yeoman使它变得更容易(如果你相信它). 每当你使用Yeoman生成一个文件, 它都会给你创建一个填充它的测试存根. 一旦你安装了Karma, 使用Yeoman运行测试只需执行下面的命令即可:
+
+	yeoman test
+
+###构建项目
+
+构建一个完备的应用程序可能是痛苦的, 或者至少涉及到需要步骤. Yeoman通过允许你像下面这样做减轻了不少痛苦:
+
++ 连接(合并)所有JS脚本到一个文件中
++ 版本化文件
++ 优化图片
++ 生成应用程序缓存清单
+
+所有的这些好处都来自于一条命令:
+
+	yeoman build
+
+Yeoman不支持压缩文件, 但是它很快会到来, 根据来发者提供的ixnxi.
+
