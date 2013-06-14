@@ -410,3 +410,27 @@ Figure 3-4. Charting dependencies in Batarang
 ![properties](figure/3-5.png)
 
 Figure 3-5. AngularJS properties within Batarang
+
+##Yeoman: 优化你的工作流程
+
+相当多的工具如雨后春笋般涌现, 以帮助你在开发应用程序时优化工作流程. 我们在前面章节所谈及的Yeoman就是这样一种工具, 它拥有令人印象深刻的功能集, 包括:
+
++ 轻快的脚手架
++ 内置预览服务器
++ 集成包管理
++ 一流的构建过程
++ 使用PhantomJS进行单元测试
+
+它还很好的集成和扩展了AngularJS, 这也是我们为什么强烈推荐任何AngularJS项目使用它的主要原因之一. 让我们通过上面的集中方式使用Yeoman时你的生活更轻松.
+
+###安装Yeoman
+
+安装Yeoman是一个相当复杂的过程, 但也可以通过一些脚本来帮助你安装.
+
+在Mac/Linux机器上, 运行下面的命令:
+
+	curl -L get .yeoman.io | bash
+
+然后只需按照打印的只是来获取Yeoman.
+
+对于Windows机器, 或者运行它是遇到任何问题, 到[https://github.com/yeoman/yeoman/ wiki/Manual-Install](https://github.com/yeoman/yeoman/ wiki/Manual-Install)并按照说明来安装会让你畅通无阻.
