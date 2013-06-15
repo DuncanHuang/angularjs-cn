@@ -586,4 +586,273 @@ Yeoman不支持压缩文件, 但是根据来发者提供的信息, 它很快会�
 
 然后我们定义一个`app.js`文件. 这个文件定义我们的AngularJS应用程序, 同时告诉它, 它依赖于我们所定义的所有控制器, 服务, 过滤器和指令. 我们所看到的RequireJS依赖列表中所提到的只是一点点.
 
-你可以认为RequireJS依赖列表就是一个JavaScript的import语句块. 也就是说, 代码块内的函数直到所有的里来列表都满足或者加载完成它都不会执行.
+你可以认为RequireJS依赖列表就是一个JavaScript的import语句块. 也就是说, 代码块内的函数直到所有的依赖列表都满足或者加载完成它都不会执行.
+
+另外请注意, 我们不会单独 告诉RequireJS, 载入的执行,服务或者过滤器是什么, 因为这些并不属于项目的结构. 每个控制器, 服务, 过滤器和指令都是一个模块, 因此只定义这些为我们的依赖就可以了.
+
+	// The app/scripts/app.js file, which defines our AngularJS app
+	define(['angular', 'angularResource', 'controllers/controllers','services/services', 'filters/filters','directives/directives'],function (angular) {
+		return angular.module(‘MyApp’, ['ngResource', 'controllers', 'services','filters', 'directives']);
+	});
+
+我们还有一个`bootstrap.js`文件, 它到等到DOM准备就绪(这里使用的RequireJS的插件`domReady`), 然后告诉AngularJS继续执行, 这是很好的.
+
+	// The app/scripts/bootstrap.js file which tells AngularJS
+	// to go ahead and bootstrap when the DOM is loaded
+	define(['angular', 'domReady'], function(angular, domReady) {
+		domReady(function() {
+			angular.bootstrap(document, [‘MyApp’]);
+		});
+	});
+
+这里将引导从应用程序中分割出来, 还有一个有事, 即我们可以使用一个伪造的文件潜在的取代我们的`mainApp`或者出于测试的目的使用一个`mockApp`. 例如 如果你所依赖的服务器不可开, 你只需要创建一个`fakeApp`使用伪造的数据来替换所有的`$http`请求, 以保持你的开发秩序. 这样的话, 你就可以只悄悄的使用一个`fakeBootstrap`和一个`fakeApp`到你的应用程序中.
+
+现在, 你的`main.html`主模板(app目录中)可能看起来像下面这样:
+
+	<!DOCTYPE html>
+	<html> <!-- Do not add ng-app here as we bootstrap AngularJS manually-->
+	<head>
+		<title>My AngularJS App</title>
+		<meta charset="utf-8" />
+		<link rel="stylesheet" type="text/css" href="styles/bootstrap.min.css">
+		<link rel="stylesheet" type="text/css"
+		href="styles/bootstrap-responsive.min.css">
+		<link rel="stylesheet" type="text/css" href="styles/app.css">
+	</head>
+	<body class="home-page" ng-control ler="RootController">
+		<div ng-view ></div>
+		<script data-main="scripts/main" src="lib/require/require.min.js"></script>
+	</body>
+	</html>
+
+现在, 我们来看看`js/controllers/controllers.js`文件, 这看起来几乎与`js/directives/directives.js`, `js/filters/filters.js`和`js/services/services.js`一模一样:
+
+	define(['angular'], function(angular){
+		'use strict';
+		return angular.module('controllers', []);
+	});
+
+因为我们使用了RequireJS依赖的结构, 所有的这些都会保证只在Angular依赖满足并加载完成的情况下才会运行.
+
+每个文件都定义为一个Angular模块, 然后通过将单个的控制器, 指令, 过滤器和服务添加到定义中来使用.
+
+让我们来看看一个指定定义(比如第二章的`focus`指令):
+
+	//File: ngbkFocus.js
+
+	define(['directives/directives'], function(directives) {
+		directives.directive(ngbkFocus, ['$rootScope'], function($rootScope){
+			return {
+				restict: 'A',
+				scope: true,
+				link: function(scope, element, attrs){
+					element[0].focus();
+				}
+			}
+		});
+	});
+
+指令自什么很琐碎的, 让我们仔细看看发生了什么. 围绕着文件的RequireJS shim告诉我们`ngbkFocus.js`依赖于在模块中声明的`directices/directives.js`文件. 然后它使用注入指令模块将自身指令声明添加进来. 你可以选择多个指令或者一个单一的对应的文件. 这完全由你决定.
+
+一个重点的注意事项: 如果你有一个控制器进入到服务中(也就是说你的`RootController`依赖于你的`UserSevice`, 并且获取`UserService`注入), 那么你必须确保将你定义的文件加入RequireJS依赖中, 就像这样:
+
+	define(['controllers/controllers', 'services/userService'], function(controllers){
+		controllers.controller('RootController', ['$scope', 'UserService', function($scope, UserService){
+			//Do what's needed
+		}]);
+	});
+
+这基本上是你整个源文件目录的结构设置.
+
+但是你会问, 这如何处理我的测试? 我很高兴你会问这个问题, 因为你会得到答案.
+
+有个很好的消息, Karma支持RequireJS. 只需安装最新和最好版本的Karma.(使用`npm install -g karma`).
+
+一旦你安装好Karma, Karma针对单元测试的配置也会响应的改变. 以下是我们如果设置我们的单元测试来运行我们之前定义的项目结构:
+
+    // This file is config/karma.conf.js.
+    // Base path, that will be used to resolve files
+    // (in this case is the root of the project)
+    basePath = '../';
+
+    // list files/patterns to load in the browser
+    files = [
+        JASMINE,
+        JASM I NE_ADAPTER
+        REQUIRE,
+        REQU I RE_ADAPTER ,
+        // !! Put all libs in RequireJS 'paths' config here (included: false).
+        // All these files are files that are needed for the tests to run,
+        // but Karma is being told explicitly to avoid loading them, as they
+        // will be loaded by RequireJS when the main module is loaded.
+        {pattern: 'app/scripts/vendor/**/*.js', included: false},
+        // all the sources, tests // !! all src and test modules (included: false)
+        {pattern: 'app/scripts/**/*.js', included: false},
+        {pattern: 'app/scripts/*.js', included: false},
+        {pattern: 'test/spec/*.js', included: false},
+        {pattern: 'test/spec/**/*.js', included: false},
+        // !! test main require module last
+        'test/spec/main.js'
+     ];
+    // list of files to exclude
+    exclude = [];
+
+    // test results reporter to use
+    // possible values: dots || progress
+    reporter = 'progress';
+
+    // web server port
+    port = 8989;
+    
+    // cli runner port
+    runnerPort = 9898;
+
+    // enable/disable colors in the output (reporters and logs)
+    colors = true;
+
+    // level of logging
+    logLevel = LOG_INFO;
+
+    // enable/disable watching file and executing tests whenever any file changes
+    autoWatch = true;
+
+    // Start these browsers, currently available: 
+    // - Chrome
+    // - ChromeCanary
+    // - Firefox
+    // - Opera
+    // - Safari
+    // - PhantomJS
+    // - IE if you have a windows box 
+    browsers = ['Chrome'];
+    
+    // Cont inuous Integrat ion mode
+    // if true, it captures browsers, runs tests, and exits 
+    singleRun = false;
+
+ 我们使用一个稍微不同的格式来定义的我们的依赖(包括: false是非常重要的). 我们还添加了REQUIRE_JS和适配依赖. 最终进行这一系列工作的是`main.js`, 他会触发我们的测试.
+
+	// This file is test/spec/main.js
+
+	require.config({
+		// !! Karma serves files from '/base'
+		// (in this case, it is the root of the project /your-project/app/js) 
+		baseUrl: ' /base/app/scr ipts' ,
+		paths: {
+        angular: 'vendor/angular/angular.min',
+			jquery: 'vendor/jquery',
+			domReady: 'vendor/require/domReady',
+			twitter: 'vendor/bootstrap',
+			angularMocks: 'vendor/angular-mocks',
+			angularResource: 'vendor/angular-resource.min',
+			unitTest: '../../../base/test/spec'
+		},
+
+		// example of using shim, to load non-AMD libraries
+		// (such as Backbone, jQuery)
+		shim: {
+			angular: {
+				exports: 'angular'
+			},
+			angularResource: { deps:['angular']},
+			angularMocks: { deps:['angularResource']}
+		}
+	});
+
+	// Start karma once the dom is ready.
+	require([
+        'domReady' ,
+        // Each individual test file will have to be added to this list to ensure
+        // that it gets run. Again, this will have to be maintained manually.
+        'unitTest/controllers/mainControllersSpec',
+        'unitTest/directives/ngbkFocusSpec',
+        'unitTest/services/userServiceSpec'
+        ], function(domReady) {
+            domReady(function() {
+                window.__karma__.start();
+        });
+    });
+
+由此设置, 我们可以运行下面的命令
+
+	karma start config/karma.conf.js
+
+然后我们就可以运行测试了.
+
+当然, 当它涉及到编写单元测试就需要稍微的改变一下. 它们需要RequireJS支持的模块, 因此让我们来看一个测试范例:
+
+	// This is test/spec/directives/ngbkFocus.js
+	define(['angularMocks', 'directives/directives', 'directives/ngbkFocus'], function() {
+		describe('ngbkFocus Directive', function() {
+			beforeEach(module('directives'));
+
+			// These will be initialized before each spec (each it(), that is),
+			// and reused
+			var elem;
+			beforeEach(inject(function($rootScope, $compile) {
+				elem = $compi le('<input type=”text” ngbk-focus>')($rootScope);
+			}));
+
+			it('should have focus immediately', function() { 
+				expect(elem.hasClass('focus')).toBeTruthy();
+			});
+		});
+	});
+
+我们的每个测试将做到以下几点:
+
+1. 拉取`angularMocks`获取我们的angular, angularResource, 当然还有angularMocks.
+
+2. 拉取高级模块(directives中的指令, controllers中的控制器等等), 然后它实际上测试的是单独的文件(loadingIndicator).
+
+3. 如果你的测试愈来愈其他的服务或者控制器, 除了在AngularJS中告知意外, 要确保也定义在RequireJS的依赖中.
+
+这种方法可以用于任何测试, 而且你应该这么做.
+
+值得庆幸的是, RequireJS的处理方式并不会影响我们所有的端到端的测试, 因此可以使用我们目前所看到的方式简单的做到这一点. 一个范例配置如下, 假设你的服务其在http://localhost:8000上运行你的应用程序:
+
+	// base path, that will be used to resolve files
+	// (in this case is the root of the project 
+	basePath = '../';
+
+	// list of files / patterns to load in the browser
+	files = [
+		ANGULAR_SCENARIO,
+		ANGULAR_SCENARIO_ADAPTER,
+		'test/e2e/*.js'
+	];
+
+	// list of files to exclude
+	exclude = [];
+
+	// test results reporter to use
+	// possible values: dots || progress
+	reporter = 'progress';
+
+	// web server port
+	port = 8989;
+
+	// cli runner port
+	runnerPort = 9898;
+	
+	// enable/disable colors in the output (reporters and logs)
+	colors = true;
+
+	// level of logging
+	logLevel = LOG_INFO;
+
+	// enable/disable watching file and executing tests whenever any file changes
+	autoWatch = true;
+
+	urlRoot = '/_karma_/';
+
+	proxies = {
+		'/': 'http://localhost:8000/'
+	};
+
+	// Start these browsers, currently available:
+	browsers = ['Chrome'];
+
+	// Cont inuous Integrat ion mode
+	// if true, it capture browsers, run tests and exit
+	singleRun = false;
