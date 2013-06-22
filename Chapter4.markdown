@@ -1,7 +1,5 @@
 #分析一个AngularJS应用程序
 
-##应用程序
-
 在第2章中, 我们已经讨论了一些AngularJS常用的功能, 然后在第3章讨论了该如何结构化开发应用程序. 现在, 我们不再继续深单个的技术点, 第4章将着眼于一个小的, 实际的应用程序进行讲解. 我们将从一个实际有效的应用程序中感受一下我们之前已经讨论过的(示例)所有的部分.
 
 我们将每次介绍一部分, 然后讨论其中有趣和关联的部分, 而不是讨论完整应用程序的前端和核心, 最后在本章的后面我们会慢慢简历这个完整的应用程序.
@@ -45,3 +43,39 @@ Figure 4-1. Guthub: A simple recipe management application
 但是, 你可能会问, 在哪里操作DOM呢? DOM操作并不会真正进入到控制器和模板中. 它会存在于Angular的指令中(有时候也可以通过服务来处理, 这样可以避免重复的DOM操作代码). 我们会在我们的Github的示例文件中涵盖一个这样的例子.
 
 废话少说, 让我们来深入探讨一下它们.
+
+##模型
+
+对于应用程序我们要保持模型非常简单. 这一有一个菜谱. 在整个完整的应用程序中, 它们是一个唯一的模型. 它是构建一切的基础.
+
+每个菜谱都有下面的属性:
+
++ 一个用于保存到服务器的ID
++ 一个名称
++ 一个简短的描述
++ 一个烹饪说明
++ 是否是一个特色的菜谱
++ 一个成份数组, 每个成分的数量, 单位和名称
+
+就是这样. 非常简单. 应用程序的中一切都基于这个简单的模型. 下面是一个让你食用的示例菜谱(如图4-1一样):
+
+	{
+		'id': '1',
+		'title': 'Cookies',
+		'description': 'Delicious. crisp on the outside, chewy' +
+			' on the outside, oozing with chocolatey goodness' +
+			' cookies. The best kind',
+		'ingredients': [
+			{
+				'amount': '1',
+				'amountUnits': 'packet',
+				'ingredientName': 'Chips Ahoy'
+			}
+		],
+		'instructions': '1. Go buy a packet of Chips Ahoy\n'+
+			'2. Heat it up in an oven\n' +
+			'3. Enjoy warm cookies\n' +
+			'4. Learn how to bake cookies from somewhere else'
+	}
+
+下面我们将会看到如何基于这个简单的模型构建更复杂的UI特性.
